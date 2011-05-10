@@ -4,7 +4,7 @@ use strict;
 use LWP::Simple 'get';
 use JSON::Any;
 #use Data::Dump::Streamer 'Dumper';
-use Data::Dumper 'Dumper';
+#use Data::Dumper 'Dumper';
 use XML::Atom::SimpleFeed;
 use Time::ParseDate;
 use List::Util 'max';
@@ -13,20 +13,69 @@ use DateTime::Format::W3CDTF;
 use Storable 'retrieve', 'nstore';
 use 5.10.0;
 
+=head1 ADAPTING TO YOUR PURPOSES
+
+=item 1
+
+Change $homedir to a directory which is readable and writable by your web server.
+
+=item 2
+
+Change $user to your twitter username.
+
+=item 3
+
+Go to L<https://dev.twitter.com/apps/new> and register a new
+application.  Enter "client" as the application type, and "read-only"
+as the default access type.  Leave the callback URL blank.
+
+=item 4
+
+Got to L<https://dev.twitter.com/apps>, click on the name of your new app.
+
+=item 5
+
+Create a file named .twitter in your $homedir, that looks something like this:
+
+  {
+    "consumer_key": "abcdefghijklmnopqrstuv",
+    "consumer_secret": "abcdefghijklmnopqrstuvwxyzabcdefghijklmno",
+    "access_token": "12345678-abcdefghijklmnopqrstuvwxyzabcdefghijklmno",
+    "access_token_secret": "abcdefghijklmnopqrstuvwxyzabcdefghijklmno"
+  }
+
+=item 6
+
+Copy down your "consumer key" and "consumer secret" from your twitter application page into the correct bits of your new .twitter file.
+
+=item 7
+
+Click on "my access token".
+
+=item 8
+
+Copy down your "access token" and "access token secret" into .twitter.
+
+=cut
+
+
+my $homedir = "/mnt/shared/projects/rss/";
+my $user = 'theorbtwo';
+
 # consumer_key
-my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = '/mnt/shared/projects/rss/.twitter'; <>});
+my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = "$homedir/.twitter"; <>});
 
 my $nt = Net::Twitter::Lite->new(
                                  %$twitter_auth,
                                 );
 
-my $user_feed = $nt->user_timeline({screen_name => 'theorbtwo',
+my $user_feed = $nt->user_timeline({screen_name => $user,
                                     trim_user=>0,
                                     include_rts=>1,
                                     include_entities=>1});
 
 my $tweet_cache = {};
-my $tweet_cache_file = '/mnt/shared/projects/rss/tweet-cache.storeable';
+my $tweet_cache_file = "$homedir/tweet-cache.storeable";
 if (-e $tweet_cache_file) {
   $tweet_cache = retrieve($tweet_cache_file);
 }
@@ -63,8 +112,8 @@ my %uniq;
 @conv = sort {$b->{newest_time} <=> $a->{newest_time}} @conv;
 
 my $feed = XML::Atom::SimpleFeed->new(
-                                      title => "theorbtwo's contextual twitter",
-                                      author => 'theorbtwo',
+                                      title => "$user\'s contextual twitter",
+                                      author => "$user",
                                       id => 'urn:uuid:5f1c1110-7624-11e0-a1f0-0800200c9a66'
                                      );
 
