@@ -10,7 +10,8 @@ use Time::ParseDate;
 use List::Util 'max';
 use Net::Twitter::Lite;
 use DateTime::Format::W3CDTF;
-use Storable 'retrieve', 'nstore';
+use Storable 'lock_retrieve', 'lock_nstore';
+use CGI;
 use 5.10.0;
 
 =head1 ADAPTING TO YOUR PURPOSES
@@ -60,10 +61,23 @@ Copy down your "access token" and "access token secret" into .twitter.
 
 
 my $homedir = "/mnt/shared/projects/rss/";
-my $user = 'theorbtwo';
+my $cgi = CGI->new;
+my $user = $cgi->param('user');
 
-# consumer_key
+if (!$user) {
+  die "Missing required parameter user=<your user name>";
+}
+
+# consumer_key, consumer_secret
 my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = "$homedir/.twitter"; <>});
+
+my $extended_auth = lock_retrieve("$homedir/twitter-user-auth.storeable");
+if (not exists $extended_auth->{$user}{auth}) {
+  die "$user not logged in, please go to http://FIXME/";
+}
+
+$twitter_auth->{access_token} = $extended_auth->{$user}{auth}{access_token};
+$twitter_auth->{access_token_secret} = $extended_auth->{$user}{auth}{access_token_secret};
 
 my $nt = Net::Twitter::Lite->new(
                                  %$twitter_auth,
@@ -77,11 +91,13 @@ my $user_feed = $nt->user_timeline({screen_name => $user,
 my $tweet_cache = {};
 my $tweet_cache_file = "$homedir/tweet-cache.storeable";
 if (-e $tweet_cache_file) {
-  $tweet_cache = retrieve($tweet_cache_file);
+  $tweet_cache = lock_retrieve($tweet_cache_file);
 }
 
 END {
-  nstore($tweet_cache, $tweet_cache_file) or die "Can't store cache to $tweet_cache_file: $!";
+  if($tweet_cache) {
+    lock_nstore($tweet_cache, $tweet_cache_file) or die "Can't store cache to $tweet_cache_file: $!";
+  }
 }
 
 my $self = bless {}, __PACKAGE__;
