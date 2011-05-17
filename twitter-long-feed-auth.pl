@@ -6,8 +6,12 @@ use CGI;
 use Storable 'lock_nstore', 'lock_retrieve';
 #use Net::Twitter::Lite;
 use Net::Twitter;
+use Template;
 use Scalar::Util 'blessed';
 use Data::Dump::Streamer 'Dump', 'Dumper';
+
+use lib '/mnt/shared/projects/rss/lib';
+use LoginForm;
 
 my $cgi = CGI->new;
 my $homedir = "/mnt/shared/projects/rss/";
@@ -40,11 +44,7 @@ my $nt = Net::Twitter->new(
 
 # MODES!
 if (!$cgi->param('user')) {
-  print <<END
-Content-type: text/plain
-
-Run me again with a user= parameter.
-END
+    show_login_page();
 } elsif ($cgi->param('user') and not $cgi->param('oauth_token')) {
   my $user = $cgi->param('user');
   my $forward_url;
@@ -71,6 +71,15 @@ END
                                  access_token_secret => $access_token_secret},
                           user_id => $user_id,
                           screen_name => $screen_name});
+
+
+  my $forward_url = "http://desert-island.me.uk/~theorb/twitter-long-feed.pl?user=$user";
+
+  print <<END;
+Location: $forward_url
+
+Please go to $forward_url
+END
 } else {
   die "Unknown mode?";
 }
@@ -98,3 +107,12 @@ sub get_storable {
   }
   return $extended_auth->{$user};
 }
+
+sub show_login_page {
+    print "Content-type: text/html\n\n";
+    my $tt = Template->new(INCLUDE_PATH => '/mnt/shared/projects/rss');
+    my $form = LoginForm->new();
+    $form->process(verbose => 1);
+    $tt->process('twitter_auth_page.html', { form => $form });
+}
+

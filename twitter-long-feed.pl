@@ -71,13 +71,13 @@ if (!$user) {
 # consumer_key, consumer_secret
 my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = "$homedir/.twitter"; <>});
 
-my $extended_auth = lock_retrieve("$homedir/twitter-user-auth.storeable");
-if (not exists $extended_auth->{$user}{auth}) {
+my $extended_auth = lock_retrieve("$homedir/twitter-user-auth.storeable")->{$user};
+if (not defined $extended_auth->{auth}) {
   user_error("$user not logged in, please go to http://desert-island.me.uk/~theorb/twitter-long-feed-auth.pl");
 }
 
-$twitter_auth->{access_token} = $extended_auth->{$user}{auth}{access_token};
-$twitter_auth->{access_token_secret} = $extended_auth->{$user}{auth}{access_token_secret};
+$twitter_auth->{access_token} = $extended_auth->{auth}{access_token};
+$twitter_auth->{access_token_secret} = $extended_auth->{auth}{access_token_secret};
 
 my $nt = Net::Twitter::Lite->new(
                                  %$twitter_auth,
@@ -149,18 +149,23 @@ for my $conv (@conv) {
     #print Dumper $tweet;
 
 
+    my ($start_b, $end_b) = ('', '');
+    if ($tweet->{user}{id} == $extended_auth->{user_id}) {
+      $start_b = "<b>";
+      $end_b = "</b>";
+    }
+
     # Most importantly: $tweet->{text}, {user}{screen_name}, {time_numeric}
-    my $text = html_escape($tweet->{user}{screen_name}).": ".html_escape($tweet->{text});
+    my $text = $start_b . html_escape($tweet->{user}{screen_name}) . $end_b . ": ".html_escape($tweet->{text});
 
     #print "$text\n";
 
     if (!$title) {
       $title = $text;
     }
+
     
-    if (!$id) {
-      $id = $tweet->{id};
-    }
+    $id .= ",$tweet->{id_str}";
 
     if ($html) {
       $html = "$html<br />\n$text";
