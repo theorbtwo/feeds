@@ -24,7 +24,7 @@ for my $url (shuffle(
                      'http://www.goodreads.com/user/updates_rss/4483087?key=ba7490ed116a03b6b2a9f2224de2c705460266cd',
                      # Uses two-digit years!
                      'https://feeds.foursquare.com/history/0AJSBCRFMO5HIURYX314JO1Y14XJPK4K.rss',
-                     'http://desert-island.me.uk/~theorb/twitter-long-feed.pl',
+                     'http://desert-island.me.uk/~theorb/twitter-long-feed.pl?user=theorbtwo',
                      'http://github.com/theorbtwo.atom',
                      'http://www.thingiverse.com/rss/user:125',
                     )
