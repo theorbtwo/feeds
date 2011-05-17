@@ -65,7 +65,7 @@ my $cgi = CGI->new;
 my $user = $cgi->param('user');
 
 if (!$user) {
-  die "Missing required parameter user=<your user name>";
+  user_error("Missing required parameter user=<your user name>");
 }
 
 # consumer_key, consumer_secret
@@ -73,7 +73,7 @@ my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = "$homedir/.twitt
 
 my $extended_auth = lock_retrieve("$homedir/twitter-user-auth.storeable");
 if (not exists $extended_auth->{$user}{auth}) {
-  die "$user not logged in, please go to http://FIXME/";
+  user_error("$user not logged in, please go to http://desert-island.me.uk/~theorb/twitter-long-feed-auth.pl");
 }
 
 $twitter_auth->{access_token} = $extended_auth->{$user}{auth}{access_token};
@@ -130,7 +130,7 @@ my %uniq;
 my $feed = XML::Atom::SimpleFeed->new(
                                       title => "$user\'s contextual twitter",
                                       author => "$user",
-                                      id => 'urn:uuid:5f1c1110-7624-11e0-a1f0-0800200c9a66'
+                                      id => "urn:uuid:5f1c1110-7624-11e0-a1f0-0800200c9a66-$user"
                                      );
 
 my $w3cdtf = DateTime::Format::W3CDTF->new();
@@ -244,3 +244,34 @@ sub fetch_tweet {
   return $tweet_cache->{$id};
 }
 
+# This is what is done when *the user* has made an error; it should
+# produce a valid ATOM feed (because otherwise nobody will ever see
+# it), but it shouldn't produce too many entries over time (because we
+# generally don't want to spam people).
+sub user_error {
+  my ($message) = @_;
+
+  my $feed = XML::Atom::SimpleFeed->new(
+                                        title => html_escape("error: $message"),
+                                        id => 'urn:uuid:1ae5c780-7fa6-11e0-b278-0800200c9a66',
+                                        author => 'twiter-contextual-feed',
+                                       );
+
+  my $w3cdtf = DateTime::Format::W3CDTF->new();
+  my $time = $w3cdtf->format_datetime(DateTime->from_epoch(epoch => int(time/86400)*86400));
+
+  $feed->add_entry(title => html_escape("error: $message"),
+                   content => html_escape("error: $message"),
+                   updated => $time,
+                   published => $time,
+                   id => 'urn:uuid:1ae5c780-7fa6-11e0-b278-0800200c9a66',
+                  );
+
+  print "Content-type: application/atom+xml\n\n";
+
+  $feed->print;
+
+  warn "User error: $message";
+
+  exit;
+}
