@@ -48,7 +48,7 @@ if (!$cgi->param('user')) {
 } elsif ($cgi->param('user') and not $cgi->param('oauth_token')) {
   my $user = $cgi->param('user');
   my $forward_url;
-  $forward_url = $nt->get_authorization_url(callback => "http://desert-island.me.uk/~theorb/twitter-long-feed-auth.pl?user=$user");
+  $forward_url = $nt->get_authorization_url(callback => "http://desert-island.me.uk/~theorb/twitter-contextual-feed-auth.pl?user=$user");
 
   modify_storable($user, {auth=>{request_token => $nt->request_token,
                                  request_token_secret => $nt->request_token_secret}});
@@ -73,7 +73,7 @@ END
                           screen_name => $screen_name});
 
 
-  my $forward_url = "http://desert-island.me.uk/~theorb/twitter-long-feed.pl?user=$user";
+  my $forward_url = "http://desert-island.me.uk/~theorb/twitter-contextual-feed.pl?user=$user";
 
   print <<END;
 Location: $forward_url

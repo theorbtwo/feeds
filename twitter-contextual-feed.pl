@@ -73,7 +73,7 @@ my $twitter_auth = JSON::Any->jsonToObj(do {local (@ARGV, $/) = "$homedir/.twitt
 
 my $extended_auth = lock_retrieve("$homedir/twitter-user-auth.storeable")->{$user};
 if (not defined $extended_auth->{auth}) {
-  user_error("$user not logged in, please go to http://desert-island.me.uk/~theorb/twitter-long-feed-auth.pl");
+  user_error("$user not logged in, please go to http://desert-island.me.uk/~theorb/twitter-contextual-feed-auth.pl");
 }
 
 $twitter_auth->{access_token} = $extended_auth->{auth}{access_token};
@@ -164,7 +164,6 @@ for my $conv (@conv) {
       $title = $text;
     }
 
-    
     $id .= ",$tweet->{id_str}";
 
     if ($html) {
@@ -178,10 +177,10 @@ for my $conv (@conv) {
   
   $feed->add_entry(title => $title,
                    content => $html,
-                   # Hm, can I be arsed, at some point, to make these two not the same?  Published should be the earliest time, updated the latest.1
+                   # Hm, can I be arsed, at some point, to make these two not the same?  Published should be the earliest time, updated the latest.
                    updated => $w3cdtf->format_datetime(DateTime->from_epoch(epoch=>$time)),
                    published => $w3cdtf->format_datetime(DateTime->from_epoch(epoch=>$time)),
-                   id => "http://desert-island.me.uk/~theorb/twitter-long-feed/$id",
+                   id => "http://desert-island.me.uk/~theorb/twitter-contextual-feed/$id",
                   );
 }
 print "Content-type: application/atom+xml\n\n";
